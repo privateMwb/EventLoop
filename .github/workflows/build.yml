@@ -1,0 +1,62 @@
+# ============================================================
+# .github/workflows/build.yml
+# Builds and runs the test suite across a matrix of compiler and
+# build-type combinations. Linux only: the reactor is epoll-based.
+# ============================================================
+
+name: Build and Test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: "${{ matrix.compiler }} | ${{ matrix.build_type }}"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - compiler: GCC
+            cxx: g++
+            build_type: Debug
+
+          - compiler: GCC
+            cxx: g++
+            build_type: Release
+
+          - compiler: Clang
+            cxx: clang++
+            build_type: Debug
+
+          - compiler: Clang
+            cxx: clang++
+            build_type: Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build g++ clang
+
+      - name: Configure
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_BENCHMARKS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure

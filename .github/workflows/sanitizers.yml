@@ -1,0 +1,56 @@
+# ============================================================
+# .github/workflows/sanitizers.yml
+# Builds and runs the test suite under ASan+UBSan and under TSan
+# on every push and pull request. TSan cannot be combined with
+# ASan, so it gets its own job.
+# ============================================================
+
+name: Sanitizers
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sanitizers:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ASan + UBSan
+            flags: "-fsanitize=address,undefined -fno-omit-frame-pointer"
+            extra: "-DBUILD_MISUSE_TESTS=ON" # Lifetime-misuse programs must be caught by ASan.
+          - name: TSan
+            flags: "-fsanitize=thread -fno-omit-frame-pointer"
+            extra: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake clang
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS="${{ matrix.flags }}" \
+            ${{ matrix.extra }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure

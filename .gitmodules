@@ -1,0 +1,9 @@
+[submodule "libs/internal/ThreadPoolPro"]
+	path = libs/internal/ThreadPoolPro
+	url = https://github.com/privateMwb/ThreadPoolPro.git
+[submodule "libs/internal/FunctionPro"]
+	path = libs/internal/FunctionPro
+	url = https://github.com/privateMwb/FunctionPro.git
+[submodule "libs/internal/PoolAllocator"]
+	path = libs/internal/PoolAllocator
+	url = https://github.com/privateMwb/PoolAllocator.git
